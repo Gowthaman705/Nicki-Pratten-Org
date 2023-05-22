@@ -1,0 +1,132 @@
+/*=========================================================================================================
+    *Class Name     : VisitTriggerHandlerTest
+    *Description    : Test class for VisitTriggerHandler
+    *Company        : Merfantz Technology
+    *Date           : 27 Nov 2018  
+ ============================================================================================================== */    
+
+@istest
+public class VisitTriggerHandlerTest{
+
+/*================================================================
+Method Name: VisitTestMethod
+Parameters : Null
+Description: 
+Date       : 27 Nov 2018  
+================================================================*/
+
+ static testMethod void VisitTestMethod(){
+ 
+ //Xero Custom Setting  
+   Xero_Settings__c xs = new Xero_Settings__c();
+        xs.name='Testing';
+        xs.Certificate_Name__c='XeroCertificate';
+        xs.Consumer_Key__c='N7SMN1YQVDXQRHCNQAABXGRB3DJC6N';
+        xs.Customer_Sync_Interval__c='';
+        xs.Endpoint__c='https://api.xero.com/api.xro/2.0/Organisation';
+        xs.Invoice_Sync_Interval__c='1';
+        xs.Password__c='';
+        xs.Product_Sync_Interval__c='1';
+        xs.Tax_Sync_Interval__c='1';
+        xs.User_Name__c='Test';
+        insert xs;
+  // Custom Setting       
+    Active_Trigger__c actri = new Active_Trigger__c();
+    actri.IsActive__c =true;
+    actri.name ='ProductTrigger';
+    insert Actri;
+  
+  // custom Setting   
+    Active_Trigger__c actri1 = new Active_Trigger__c();
+    actri1.IsActive__c =true;
+    actri1.name ='InvoiceTriggerHandler';
+    insert Actri1;
+     Active_Trigger__c actri2 = new Active_Trigger__c();
+    actri2.IsActive__c =true;
+    actri2.name ='AccountTrigger';
+    insert Actri2;
+    Account ac=new Account();
+    ac.Name='test account';
+    insert ac;
+    
+  // PriceBook    
+    Id pricebookId = Test.getStandardPricebookId();
+    Pricebook2 price = new Pricebook2();
+    price.Name='Custom Pricebook';
+    price.isActive=true;
+    insert price;
+    
+  //Product  
+    product2 pr=new product2();
+    pr.Name='test account';
+    pr.Isactive=true;
+    insert pr;
+   
+  //PriceBook Entry 
+    PricebookEntry pb = new PricebookEntry();
+    pb.Pricebook2Id = pricebookId;
+    pb.Product2Id = pr.Id;
+    pb.UnitPrice = 100.00;
+    pb.IsActive = true;
+    insert pb;
+    
+  //Service Term  
+    fax__Service_Term__c sc=new fax__Service_Term__c();
+    sc.fax__Type__c='Installation/Setup';
+    sc.fax__Status__c='In Review';
+    sc.fax__Site__c=ac.id;
+    sc.fax__Start_Date__c=system.today();
+    sc.fax__End_Date__c=System.today() + 5;
+     
+    
+    sc.fax__Standard_Call_Out_Charge__c=1000;
+    SC.fax__Parts_Pricing_Model__c=pricebookId ;
+    sc.fax__OOH_Call_Out_Charge__c=1000;
+    insert sc;
+    
+  // work Calendar  
+    fax__Work_Calendar__c   wc=new fax__Work_Calendar__c();
+    wc.Name='test account';
+    insert wc;
+    
+  //Technician   
+    fax__Service_Engineer__c se=new fax__Service_Engineer__c();
+    se.Name='test account';
+    se.fax__Work_Calendar__c=wc.id;
+    insert se;
+    
+  //visit  
+    fax__Visit__c jc=new fax__Visit__c();//job
+    
+    DateTime DateVal = System.now();
+     
+    jc.fax__Status__c='Queued';
+     jc.fax__Visit_Type__c='Installation';
+    jc.fax__Site__c=ac.id;
+    jc.fax__Planned_Visit_Date_Time__c= DateVal;
+    jc.fax__Actual_Visit_Date_Time__c=DateVal;
+    jc.fax__Completion_Date_Time__c=DateVal.addDays(1);
+    jc.fax__Service_Term__c=sc.id;
+    jc.fax__Service_Engineer__c=se.id;
+     jc.Project_Manager__c='Lisa Davies';
+    insert jc;
+
+fax__Visit__c j = new fax__Visit__c();
+DateTime DateVa = System.now();
+j.fax__Status__c = 'Queued';
+j.fax__Visit_Type__c = 'Service';
+j.fax__Site__c = ac.id;
+j.fax__Planned_Visit_Date_Time__c = DateVa;
+j.fax__Actual_Visit_Date_Time__c = DateVa;
+j.fax__Completion_Date_Time__c = DateVa.addDays(1);
+j.fax__Service_Term__c = sc.id;
+j.fax__Service_Engineer__c = se.id;
+j.Project_Manager__c = 'Lisa Davies';
+     
+     
+     
+     Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator());
+
+   
+   }
+   }
