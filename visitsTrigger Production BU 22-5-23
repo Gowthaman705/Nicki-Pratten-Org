@@ -1,0 +1,29 @@
+/*============================================================================================================
+*Trigger Name   : visitTrigger 
+*Description    : Trigger fort update site and account values
+*Company        : Merfantz Technology Pvt Ltd
+*Date           : 26 Feb 2016
+*============================================================================================================*/
+trigger visitsTrigger on fax__Visit__c (after update,after insert, Before Insert, Before Update) {
+    
+    visittriggerHandler Scheduler=new visittriggerHandler();
+    
+    /*  if(trigger.isBefore && trigger.isInsert){
+Scheduler.OnBeforeInsert(trigger.new);
+}
+*/
+    if(trigger.isAfter && trigger.isInsert){
+        Scheduler.OnAfterInsert(trigger.newMap);
+    }
+    if(trigger.isBefore ){
+        if(trigger.isInsert){
+            Scheduler.JobCreated(trigger.new);
+        }
+        else if(trigger.isUpdate){
+            Scheduler.JobUpdated(trigger.old);
+        }
+    }
+    
+    
+    
+}
