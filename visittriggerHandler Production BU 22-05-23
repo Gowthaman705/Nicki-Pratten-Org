@@ -1,0 +1,132 @@
+/*============================================================================================================
+*Class Name     : visittriggerHandler 
+*Description    : Visit Trigger Handler Class
+*Company        : Merfantz Technologies Pvt Ltd
+*Date           : 27th Nov, 2018
+*Version        : 1.0
+*Change History : Initial Class 
+*Methods        : public void OnAfterInsert()
+                  public void addcustomer()
+*Changes History :  111232 - Rescheduling Function
+*Date            :  17/05/2023  
+*Methods         :  public void JobCreated()
+                    public void JobUpdated()
+                private fax__Service_Term__c getSiteContractList()   
+*============================================================================================================*/
+public with sharing class visittriggerHandler{
+    
+    public void OnAfterInsert(Map<id,fax__Visit__c> ScheduleNewMap){
+        //   PUBLIC VOID OnBeforeInsert(List<fax__Visit__c> SchedulerVisits)
+        addcustomer(ScheduleNewMap);
+    }
+    
+    /*============================================================================================================
+*Method Name     : addcustomer
+*Description     : Site lookup value update from the setvice term site lookup.
+*Arguments       : New visit Map value
+*============================================================================================================*/
+    
+    public void addcustomer(Map<id,fax__Visit__c> SchedulerNewMap){ 
+        
+        List<id> SchedulerTermsIds=new List<id>();
+        //Collect Key Ids
+        for(fax__Visit__c Schedule : SchedulerNewMap.values()){           
+            SchedulerTermsIds.add(Schedule.fax__Service_Term__c);
+        }
+        
+        list<fax__Visit__c> vst = new list<fax__Visit__c>(); 
+        Map<id, fax__Service_Term__c> SchedulerServiceTerms=new Map<id, fax__Service_Term__c>([SELECT id, fax__Site__c,Site__c from fax__Service_Term__c where id IN:SchedulerTermsIds]);        
+        for(fax__Visit__c Schedule : [select fax__Site__c, fax__Service_Term__c, site__c from fax__visit__c where id=:SchedulerNewMap.keyset()]){           
+            Schedule.fax__Site__c=SchedulerServiceTerms.get(Schedule.fax__Service_Term__c).fax__Site__c;
+            Schedule.Site__c=SchedulerServiceTerms.get(Schedule.fax__Service_Term__c).site__c;
+            vst.add(Schedule);
+        }
+        
+        
+        if(vst.size()>0){
+            try{
+                update vst;
+            }catch(exception e){
+                system.debug('Exception'+e.getmessage());
+            }
+        }
+        
+    }
+    
+    
+/*=====================================================================================================================
+*Method Name     : JobCreated
+*Description     : When job is created in site contract when job category is created in Installation or Call Out once 
+            the job scheduled its false the Enforce Scheduling else it true the Enforce Scheduling
+*Arguments       : New  Job List value
+*======================================================================================================================*/
+    
+    public void JobCreated(List<fax__Visit__c> SchedulerList)
+    {
+        Set<id> SchedulerTermsIds=new Set<id>(); 
+        List<fax__Service_Term__c> SiteContract= new List<fax__Service_Term__c>();
+        for(fax__Visit__c Schedule : SchedulerList)
+        {           
+            SchedulerTermsIds.add(Schedule.fax__Service_Term__c);
+            fax__Service_Term__c S = getSiteContractList(Schedule);
+            if(Schedule.fax__Visit_Type__c=='Installation'||Schedule.fax__Visit_Type__c=='Call Out')
+            {
+                S.fax__Schedule_Next_Visit__c = false;
+                SiteContract.add(S);
+            }
+            else
+            {
+                S.fax__Schedule_Next_Visit__c = true;
+                SiteContract.add(S);
+            }
+        }
+        
+        if(SiteContract.size() > 0)
+        {
+            update SiteContract;
+        }
+        
+    }
+    
+ /*===================================================================================================================
+*Method Name     : JobUpdated
+*Description     : When job is created in site contract when job category is created in Installation or Call Out once 
+            the job scheduled its false the Enforce Scheduling else it true the Enforce Scheduling
+*Arguments       : New Job List value
+*======================================================================================================================*/
+    
+    public void JobUpdated(List<fax__Visit__c> SchedulerList)
+    {
+        Set<id> SchedulerTermsIds=new Set<id>(); 
+        Set<id> SchedulerIds=new Set<id>(); 
+        List<fax__Service_Term__c> SiteContract= new List<fax__Service_Term__c>();
+        
+        
+        for(fax__Visit__c Schedule : SchedulerList)
+        {           
+            SchedulerTermsIds.add(Schedule.fax__Service_Term__c);
+            fax__Service_Term__c S = getSiteContractList(Schedule);
+            if(Schedule.fax__Visit_Type__c=='Installation'||Schedule.fax__Visit_Type__c=='Call Out')
+            {
+                S.fax__Schedule_Next_Visit__c = false;
+                SiteContract.add(S);
+            }
+            else
+            {
+                S.fax__Schedule_Next_Visit__c = true;
+                SiteContract.add(S);
+            }
+        }
+        
+        if(SiteContract.size() > 0)
+        {
+            update SiteContract;
+        }
+        
+    } 
+    private fax__Service_Term__c getSiteContractList(fax__Visit__c Schedule){
+        fax__Service_Term__c SiteContract;
+        SiteContract = [SELECT id, fax__Schedule_Next_Visit__c from fax__Service_Term__c where id=:schedule.fax__Service_Term__c];
+        return SiteContract;
+    }     
+}
